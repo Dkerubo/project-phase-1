@@ -1,0 +1,34 @@
+{
+  "drivers": [
+    {
+      "name": "leroy Kay",
+      "email": "wue@gmail.com",
+      "nationalId": "12345674",
+      "location": "kayle",
+      "truckPlate": "KCP 234v",
+      "datePicked": "2024-10-16",
+      "returnDate": "2024-10-29",
+      "id": "cc4f"
+    },
+    {
+      "id": "0b60",
+      "name": "kerry bee",
+      "email": "bee@gmail.com",
+      "nationalId": "12345669",
+      "location": "Kisumu",
+      "truckPlate": "KBP 234f",
+      "datePicked": "2024-10-17",
+      "returnDate": "2024-10-23"
+    },
+    {
+      "id": "952c",
+      "name": "Doreen Was",
+      "email": "was@gmail.com",
+      "nationalId": "12345665",
+      "location": "Tanzania",
+      "truckPlate": "KCA 456J",
+      "datePicked": "2024-10-03",
+      "returnDate": "2024-10-31"
+    }
+  ]
+}
