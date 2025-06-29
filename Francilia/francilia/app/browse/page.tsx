@@ -8,12 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Search, Play, Info, LogOut, User, Settings, Star } from 'lucide-react'
 import Logo from '@/components/ui/logo'
 import LanguageSelector from '@/components/ui/language-selector'
-import { muviAPI, type Movie } from '@/lib/muvi-api'
+import { movieAPI, type Movie } from '@/lib/movie-api'
 import { useRouter } from 'next/navigation'
 import { useI18n } from '@/hooks/use-i18n'
+import { authService, type User as UserType } from '@/lib/auth'
 
 export default function Browse() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<UserType | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [movies, setMovies] = useState<Movie[]>([])
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null)
@@ -24,48 +25,47 @@ export default function Browse() {
   const { t } = useI18n()
 
   useEffect(() => {
-    const userData = localStorage.getItem('francilia_user')
-    if (!userData) {
+    const currentUser = authService.getCurrentUser()
+    if (!currentUser) {
       router.push('/')
       return
     }
     
-    const parsedUser = JSON.parse(userData)
-    if (!parsedUser.subscription) {
+    if (!currentUser.subscription) {
       router.push('/subscribe')
       return
     }
     
-    setUser(parsedUser)
+    setUser(currentUser)
     loadMovies()
   }, [router])
 
   const loadMovies = async () => {
     setLoading(true)
-    setApiStatus('Connecting to Muvi API...')
+    setApiStatus('Loading movies...')
     
     try {
-      console.log('Starting to load movies from Muvi API...')
+      console.log('Starting to load movies from Movie API...')
       
-      const response = await muviAPI.getMovies(1, 20)
-      console.log('Muvi API response:', response)
+      const response = await movieAPI.getMovies(1, 20)
+      console.log('Movie API response:', response)
       
       if (response.success && response.data && response.data.length > 0) {
-        console.log('Successfully loaded movies from Muvi API:', response.data.length)
-        setApiStatus('Connected to Muvi API ✓')
+        console.log('Successfully loaded movies from API:', response.data.length)
+        setApiStatus('Movies loaded successfully ✓')
         setMovies(response.data)
         setFeaturedMovie(response.data[0])
       } else {
-        console.log('Muvi API returned no data, using mock data')
-        setApiStatus('Using demo content (Muvi API unavailable)')
-        const mockMovies = muviAPI.getMockMovies()
+        console.log('API returned no data, using mock data')
+        setApiStatus('Using demo content (API unavailable)')
+        const mockMovies = movieAPI.getMockMovies()
         setMovies(mockMovies)
         setFeaturedMovie(mockMovies[0])
       }
     } catch (error) {
       console.error('Error loading movies:', error)
       setApiStatus('Using demo content (API error)')
-      const mockMovies = muviAPI.getMockMovies()
+      const mockMovies = movieAPI.getMockMovies()
       setMovies(mockMovies)
       setFeaturedMovie(mockMovies[0])
     } finally {
@@ -82,38 +82,36 @@ export default function Browse() {
 
     setLoading(true)
     try {
-      const response = await muviAPI.searchMovies(query)
+      const response = await movieAPI.searchMovies(query)
       
       if (response.success && response.data.length > 0) {
         setMovies(response.data)
       } else {
-        const mockMovies = muviAPI.getMockMovies()
-        const filtered = mockMovies.filter(movie =>
-          movie.title.toLowerCase().includes(query.toLowerCase()) ||
-          movie.genre.some(g => g.toLowerCase().includes(query.toLowerCase()))
-        )
-        setMovies(filtered)
+        setMovies([])
       }
     } catch (error) {
       console.error('Error searching movies:', error)
-      const mockMovies = muviAPI.getMockMovies()
-      const filtered = mockMovies.filter(movie =>
-        movie.title.toLowerCase().includes(query.toLowerCase()) ||
-        movie.genre.some(g => g.toLowerCase().includes(query.toLowerCase()))
-      )
-      setMovies(filtered)
+      setMovies([])
     } finally {
       setLoading(false)
     }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('francilia_user')
+    authService.logout()
     router.push('/')
   }
 
   const handlePlayMovie = (movieId: string) => {
     router.push(`/watch/${movieId}`)
+  }
+
+  const handleAccountSettings = () => {
+    if (user?.role === 'admin') {
+      router.push('/dashboard')
+    } else {
+      router.push('/account')
+    }
   }
 
   const filteredMovies = searchQuery 
@@ -162,6 +160,9 @@ export default function Browse() {
               >
                 <User className="h-4 w-4" />
                 <span>{user.name}</span>
+                {user.role === 'admin' && (
+                  <Badge className="bg-red-500 text-white text-xs">Admin</Badge>
+                )}
               </Button>
               
               {showUserMenu && (
@@ -173,18 +174,19 @@ export default function Browse() {
                   <div className="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg shadow-2xl z-50">
                     <div className="p-2">
                       <div className="px-3 py-2 text-sm text-gray-400 border-b border-gray-700 mb-2">
-                        {user.subscription.plan === 'premium' ? 'Premium' : 'Standard'} Plan
-                        {user.subscription.isFreeTrial && (
+                        {user.subscription?.plan === 'premium' ? 'Premium' : 'Standard'} Plan
+                        {user.subscription?.isFreeTrial && (
                           <div className="text-green-400 text-xs mt-1">Free Trial Active</div>
                         )}
                       </div>
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        onClick={handleAccountSettings}
                         className="flex items-center gap-2 w-full justify-start text-white hover:bg-gray-800/50"
                       >
                         <Settings className="h-4 w-4" />
-                        {t('nav.settings')}
+                        {user.role === 'admin' ? 'Dashboard' : 'Account Settings'}
                       </Button>
                       <Button
                         variant="ghost"

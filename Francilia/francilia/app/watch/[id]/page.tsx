@@ -18,7 +18,7 @@ import {
   Heart,
   Share2
 } from 'lucide-react'
-import { muviAPI, type Movie } from '@/lib/muvi-api'
+import { movieAPI, type Movie } from '@/lib/movie-api'
 import { useRouter, useParams } from 'next/navigation'
 import { useI18n } from '@/hooks/use-i18n'
 
@@ -65,31 +65,17 @@ export default function WatchMovie() {
     
     setLoading(true)
     try {
-      const response = await muviAPI.getMovie(movieId)
+      const response = await movieAPI.getMovie(movieId)
       
       if (response.success && response.data) {
         setMovie(response.data)
         setDuration(135 * 60)
       } else {
-        const mockMovies = muviAPI.getMockMovies()
-        const foundMovie = mockMovies.find(m => m.id === movieId)
-        if (foundMovie) {
-          setMovie(foundMovie)
-          setDuration(135 * 60)
-        } else {
-          router.push('/browse')
-        }
+        router.push('/browse')
       }
     } catch (error) {
       console.error('Error loading movie:', error)
-      const mockMovies = muviAPI.getMockMovies()
-      const foundMovie = mockMovies.find(m => m.id === movieId)
-      if (foundMovie) {
-        setMovie(foundMovie)
-        setDuration(135 * 60)
-      } else {
-        router.push('/browse')
-      }
+      router.push('/browse')
     } finally {
       setLoading(false)
     }
