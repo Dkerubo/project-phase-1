@@ -12,7 +12,12 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     // Check if user is logged in
@@ -42,17 +47,19 @@ export default function Home() {
       <div className="relative h-screen w-full overflow-hidden bg-black">
         {/* Intro Video */}
         <div className="absolute inset-0">
-          <video
-            autoPlay
-            muted={isMuted}
-            className="h-full w-full object-cover"
-            onEnded={() => {
-              setShowVideo(false)
-              setShowAuth(true)
-            }}
-          >
-            <source src="https://franciliafilms.com/PoliticalVendettaNoGunshots.mp4" type="video/mp4" />
-          </video>
+          {isClient && (
+            <video
+              autoPlay
+              muted={isMuted}
+              className="h-full w-full object-cover"
+              onEnded={() => {
+                setShowVideo(false)
+                setShowAuth(true)
+              }}
+            >
+              <source src="https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0fd273d2c6d9a064f3ae35579b2bbdf&profile_id=139&oauth2_token_id=57447761" type="video/mp4" />
+            </video>
+          )}
           
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-black/40" />

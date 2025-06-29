@@ -20,18 +20,7 @@ import {
 } from 'lucide-react'
 import { muviAPI, type Movie } from '@/lib/muvi-api'
 import { useRouter, useParams } from 'next/navigation'
-
-export async function generateStaticParams() {
-  // Generate static params for all possible movie IDs
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    { id: '4' },
-    { id: '5' },
-    { id: '6' }
-  ]
-}
+import { useI18n } from '@/hooks/use-i18n'
 
 export default function WatchMovie() {
   const [user, setUser] = useState<any>(null)
@@ -47,6 +36,7 @@ export default function WatchMovie() {
   const router = useRouter()
   const params = useParams()
   const movieId = params?.id as string
+  const { t } = useI18n()
 
   useEffect(() => {
     const userData = localStorage.getItem('francilia_user')
@@ -64,36 +54,34 @@ export default function WatchMovie() {
     setUser(parsedUser)
     loadMovie()
     
-    // Show ads for standard plan
     if (parsedUser.subscription.plan === 'standard') {
       setShowAds(true)
-      setTimeout(() => setShowAds(false), 5000) // Hide ads after 5 seconds
+      setTimeout(() => setShowAds(false), 5000)
     }
   }, [router, movieId])
 
   const loadMovie = async () => {
+    if (!movieId) return
+    
     setLoading(true)
     try {
-      // Try to fetch from Muvi API first
       const response = await muviAPI.getMovie(movieId)
       
       if (response.success && response.data) {
         setMovie(response.data)
-        setDuration(135 * 60) // Default duration in seconds
+        setDuration(135 * 60)
       } else {
-        // Fallback to mock data
         const mockMovies = muviAPI.getMockMovies()
         const foundMovie = mockMovies.find(m => m.id === movieId)
         if (foundMovie) {
           setMovie(foundMovie)
-          setDuration(135 * 60) // 2h 15m in seconds
+          setDuration(135 * 60)
         } else {
           router.push('/browse')
         }
       }
     } catch (error) {
       console.error('Error loading movie:', error)
-      // Use mock data as fallback
       const mockMovies = muviAPI.getMockMovies()
       const foundMovie = mockMovies.find(m => m.id === movieId)
       if (foundMovie) {
@@ -137,7 +125,7 @@ export default function WatchMovie() {
 
   if (!user || loading) {
     return <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-white">Loading...</div>
+      <div className="text-white">{t('common.loading')}</div>
     </div>
   }
 
@@ -153,12 +141,12 @@ export default function WatchMovie() {
       <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50' : 'h-screen'}`}>
         {/* Ad Overlay for Standard Plan */}
         {showAds && user.subscription.plan === 'standard' && (
-          <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center">
-            <Card className="bg-gray-900 border-gray-700 max-w-md">
+          <div className="absolute inset-0 z-40 bg-black/90 backdrop-blur-sm flex items-center justify-center">
+            <Card className="bg-gray-900/90 border-gray-700 max-w-md backdrop-blur-md">
               <CardHeader className="text-center">
-                <CardTitle className="text-white">Advertisement</CardTitle>
+                <CardTitle className="text-white">{t('watch.advertisement')}</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Upgrade to Premium to enjoy ad-free viewing
+                  {t('watch.upgradeMessage')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
@@ -170,7 +158,7 @@ export default function WatchMovie() {
                   className="text-white hover:opacity-90"
                   style={{ backgroundColor: '#a38725' }}
                 >
-                  Upgrade to Premium
+                  {t('watch.upgradeNow')}
                 </Button>
               </CardContent>
             </Card>
@@ -201,24 +189,24 @@ export default function WatchMovie() {
               variant="ghost"
               size="sm"
               onClick={() => router.push('/browse')}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 backdrop-blur-sm"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Browse
+              {t('watch.backToBrowse')}
             </Button>
             
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 backdrop-blur-sm"
               >
                 <Heart className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 backdrop-blur-sm"
               >
                 <Share2 className="h-4 w-4" />
               </Button>
@@ -230,14 +218,14 @@ export default function WatchMovie() {
             <Button
               onClick={handlePlayPause}
               size="lg"
-              className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm rounded-full p-4"
+              className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm rounded-full p-4 transition-all hover:scale-110"
             >
               {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
             </Button>
           </div>
 
           {/* Bottom Controls */}
-          <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="absolute bottom-0 left-0 right-0 p-6 backdrop-blur-sm">
             {/* Progress Bar */}
             <div className="mb-4">
               <input
@@ -317,15 +305,15 @@ export default function WatchMovie() {
             <div className="lg:col-span-2">
               <h1 className="mb-4 text-4xl font-bold">{movie.title}</h1>
               <div className="mb-6 flex items-center gap-4 text-sm">
-                <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                <Badge variant="outline" className="text-yellow-400 border-yellow-400 bg-yellow-400/10">
                   <Star className="mr-1 h-3 w-3" />
                   {movie.rating}
                 </Badge>
-                <span>{movie.year}</span>
-                <span>{movie.duration}</span>
-                <span>{Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre}</span>
+                <span className="text-gray-300">{movie.year}</span>
+                <span className="text-gray-300">{movie.duration}</span>
+                <span className="text-gray-300">{Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre}</span>
               </div>
-              <p className="mb-8 text-lg text-gray-300">{movie.description}</p>
+              <p className="mb-8 text-lg text-gray-300 leading-relaxed">{movie.description}</p>
               
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
@@ -345,9 +333,9 @@ export default function WatchMovie() {
             </div>
             
             <div>
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-white">Your Plan</CardTitle>
+                  <CardTitle className="text-white">{t('watch.yourPlan')}</CardTitle>
                   <CardDescription className="text-gray-400">
                     {user.subscription.plan === 'premium' ? 'Premium - No Ads' : 'Standard - With Ads'}
                   </CardDescription>
@@ -360,16 +348,16 @@ export default function WatchMovie() {
                     </div>
                     
                     {user.subscription.plan === 'standard' && (
-                      <div className="rounded-lg bg-yellow-500/10 p-4">
+                      <div className="rounded-lg bg-yellow-500/10 p-4 border border-yellow-500/20">
                         <p className="text-sm text-yellow-400">
-                          Upgrade to Premium for ad-free viewing and 4K quality
+                          {t('watch.adFreeViewing')}
                         </p>
                         <Button
                           onClick={() => router.push('/subscribe')}
                           size="sm"
                           className="mt-2 bg-yellow-600 hover:bg-yellow-700"
                         >
-                          Upgrade Now
+                          {t('watch.upgradeNow')}
                         </Button>
                       </div>
                     )}

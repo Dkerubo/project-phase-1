@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, CreditCard, Shield, Lock, Check } from 'lucide-react'
+import { ArrowLeft, CreditCard, Shield, Lock, Check, Gift } from 'lucide-react'
 import Logo from '@/components/ui/logo'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -51,14 +51,16 @@ export default function Payment() {
         name: 'Premium',
         price: 10.99,
         description: 'Ultimate experience, no ads',
-        features: ['4K Ultra HD streaming', 'Watch on 4 devices', 'No ads, ever', 'Premium content access']
+        features: ['4K Ultra HD streaming', 'Watch on 4 devices', 'No ads, ever', 'Premium content access', '1 month free trial'],
+        freeTrialMonths: 1
       },
       standard: {
         id: 'standard',
         name: 'Standard',
         price: 5.99,
         description: 'Great entertainment with ads',
-        features: ['HD streaming quality', 'Watch on 2 devices', 'Ad-supported viewing', 'Mobile downloads']
+        features: ['HD streaming quality', 'Watch on 2 devices', 'Ad-supported viewing', 'Mobile downloads', '1 month free trial'],
+        freeTrialMonths: 1
       }
     }
     
@@ -112,17 +114,23 @@ export default function Payment() {
 
     // Simulate payment processing
     setTimeout(() => {
+      const trialEndDate = new Date()
+      trialEndDate.setMonth(trialEndDate.getMonth() + selectedPlan.freeTrialMonths)
+      
       const updatedUser = {
         ...user,
         subscription: {
           plan: selectedPlan.id,
           price: selectedPlan.price,
           startDate: new Date().toISOString(),
-          status: 'active',
+          trialEndDate: trialEndDate.toISOString(),
+          status: 'trial', // Start with trial status
           paymentMethod: {
             last4: cardNumber.slice(-4),
             type: 'card'
-          }
+          },
+          isFreeTrial: true,
+          freeTrialMonths: selectedPlan.freeTrialMonths
         }
       }
       
@@ -159,9 +167,12 @@ export default function Payment() {
           {/* Payment Form */}
           <div>
             <div className="mb-8">
-              <h1 className="mb-4 text-4xl font-bold">Complete Your Order</h1>
+              <div className="flex items-center gap-3 mb-4">
+                <Gift className="h-8 w-8 text-green-500" />
+                <h1 className="text-4xl font-bold">Start Your Free Trial</h1>
+              </div>
               <p className="text-gray-400">
-                Secure payment processing powered by industry-leading encryption
+                No payment required for your first month. We'll only charge your card after your free trial ends.
               </p>
             </div>
 
@@ -173,6 +184,9 @@ export default function Payment() {
                     <CreditCard className="h-5 w-5" />
                     Payment Method
                   </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Required for verification. You won't be charged during your free trial.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -295,8 +309,8 @@ export default function Payment() {
               <div className="flex items-center gap-3 rounded-lg bg-green-500/10 p-4 border border-green-500/20">
                 <Shield className="h-5 w-5 text-green-500" />
                 <div className="text-sm">
-                  <p className="text-green-400 font-medium">Secure Payment</p>
-                  <p className="text-gray-400">Your payment information is encrypted and secure</p>
+                  <p className="text-green-400 font-medium">Secure & Free Trial</p>
+                  <p className="text-gray-400">Your payment information is encrypted. No charges for 1 month.</p>
                 </div>
               </div>
 
@@ -309,12 +323,12 @@ export default function Payment() {
                 {isProcessing ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Processing Payment...
+                    Starting Free Trial...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Lock className="h-4 w-4" />
-                    Complete Payment - ${selectedPlan.price}/month
+                    <Gift className="h-4 w-4" />
+                    Start 1 Month Free Trial
                   </div>
                 )}
               </Button>
@@ -325,9 +339,9 @@ export default function Payment() {
           <div>
             <Card className="bg-gray-900 border-gray-800 sticky top-6">
               <CardHeader>
-                <CardTitle className="text-white">Order Summary</CardTitle>
+                <CardTitle className="text-white">Trial Summary</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Review your subscription details
+                  Your free trial details
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -358,23 +372,30 @@ export default function Payment() {
                 </div>
                 
                 <div className="border-t border-gray-800 pt-4">
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-white">Monthly Total</span>
-                    <span className="font-bold text-white">${selectedPlan.price}</span>
+                  <div className="flex items-center justify-between text-lg mb-2">
+                    <span className="text-white">First Month</span>
+                    <div className="flex items-center gap-2">
+                      <span className="line-through text-gray-500">${selectedPlan.price}</span>
+                      <span className="font-bold text-green-500">FREE</span>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Billed monthly • Cancel anytime
+                  <div className="flex items-center justify-between text-sm text-gray-400">
+                    <span>After trial</span>
+                    <span>${selectedPlan.price}/month</span>
+                  </div>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Cancel anytime during your free trial
                   </p>
                 </div>
                 
-                <div className="rounded-lg bg-blue-500/10 p-4 border border-blue-500/20">
+                <div className="rounded-lg bg-green-500/10 p-4 border border-green-500/20">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-blue-500 p-1">
-                      <Check className="h-3 w-3 text-white" />
+                    <div className="rounded-full bg-green-500 p-1">
+                      <Gift className="h-3 w-3 text-white" />
                     </div>
                     <div className="text-sm">
-                      <p className="text-blue-400 font-medium">30-Day Money Back Guarantee</p>
-                      <p className="text-gray-400">Not satisfied? Get a full refund within 30 days</p>
+                      <p className="text-green-400 font-medium">1 Month Completely Free</p>
+                      <p className="text-gray-400">Full access to all features. Cancel anytime with no charges.</p>
                     </div>
                   </div>
                 </div>
