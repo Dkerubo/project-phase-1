@@ -31,10 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Initialize auth state
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          const currentUser = authService.getCurrentUser()
-          setUser(currentUser)
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            const currentUser = authService.getCurrentUser()
+            setUser(currentUser)
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error)
@@ -46,23 +48,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Wait a bit for the auth service to load user data
-          setTimeout(() => {
-            const currentUser = authService.getCurrentUser()
-            setUser(currentUser)
+    let subscription: any = null
+    
+    if (supabase) {
+      const { data } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            // Wait a bit for the auth service to load user data
+            setTimeout(() => {
+              const currentUser = authService.getCurrentUser()
+              setUser(currentUser)
+              setLoading(false)
+            }, 1000)
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null)
             setLoading(false)
-          }, 1000)
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setLoading(false)
+          }
         }
-      }
-    )
+      )
+      subscription = data.subscription
+    }
 
-    return () => subscription.unsubscribe()
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe()
+      }
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {

@@ -1,17 +1,29 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
+  swcMinify: true,
   images: { 
     unoptimized: true,
-    domains: ['images.pexels.com', 'player.vimeo.com']
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'player.vimeo.com',
+      },
+    ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js']
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    optimizePackageImports: ['lucide-react']
   },
   async rewrites() {
     return [
@@ -44,7 +56,10 @@ const nextConfig = {
   },
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
-  }
+  },
+  poweredByHeader: false,
+  compress: true,
+  generateEtags: false,
 };
 
 module.exports = nextConfig;

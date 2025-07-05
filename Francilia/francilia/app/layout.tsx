@@ -8,8 +8,17 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Francilia Films - Premium Streaming Experience',
   description: 'Unlimited movies, TV shows, and exclusive content. Watch anywhere, anytime.',
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#000000',
+  metadataBase: new URL('https://francilia-films.vercel.app'),
+  openGraph: {
+    title: 'Francilia Films - Premium Streaming Experience',
+    description: 'Unlimited movies, TV shows, and exclusive content. Watch anywhere, anytime.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Francilia Films - Premium Streaming Experience',
+    description: 'Unlimited movies, TV shows, and exclusive content. Watch anywhere, anytime.',
+  },
 };
 
 export default function RootLayout({
@@ -19,10 +28,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#000000" />
-      </head>
       <body className={`${inter.className} antialiased`} suppressHydrationWarning={true}>
         <AuthProvider>
           {children}

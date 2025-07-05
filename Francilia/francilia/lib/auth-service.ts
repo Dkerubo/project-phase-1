@@ -45,20 +45,61 @@ export class AuthService {
   }
 
   private async initializeAuth() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user) {
-      await this.loadUserData(session.user.id)
+    try {
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          await this.loadUserData(session.user.id)
+        }
+      }
+    } catch (error) {
+      console.warn('Auth initialization failed:', error)
     }
 
     // Listen for auth changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await this.loadUserData(session.user.id)
-      } else if (event === 'SIGNED_OUT') {
-        this.currentUser = null
-        await this.deactivateCurrentSession()
+    if (supabase) {
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await this.loadUserData(session.user.id)
+        } else if (event === 'SIGNED_OUT') {
+          this.currentUser = null
+          await this.deactivateCurrentSession()
+        }
+      })
+    }
+  }
+
+  private async loadUserData(userId: string) {
+    if (!supabase) {
+      console.warn('Supabase not available')
+      return
+    }
+    
+    try {
+      // Load user with related data
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select(`
+          *,
+          subscriptions(*),
+          payment_methods(*),
+          user_devices(*),
+          user_sessions(*)
+        `)
+        .eq('id', userId)
+        .single()
+
+      if (userError) {
+        console.warn('User data load error:', userError)
+        return
       }
-    })
+
+      this.currentUser = user as AuthUser
+      await this.updateLastLogin()
+      await this.registerCurrentDevice()
+    } catch (error) {
+      console.error('Error loading user data:', error)
+    }
   }
 
   private async loadUserData(userId: string) {
