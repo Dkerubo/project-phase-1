@@ -22,10 +22,12 @@ export default function Home() {
 
   useEffect(() => {
     // Check if user is logged in
-    const user = localStorage.getItem('francilia_user')
-    if (user) {
-      setIsLoggedIn(true)
-      router.push('/browse')
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('francilia_user')
+      if (user) {
+        setIsLoggedIn(true)
+        router.push('/browse')
+      }
     }
   }, [router])
 
@@ -43,24 +45,30 @@ export default function Home() {
     setShowAuth(true)
   }
 
+  // Show loading state until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading Francilia Films...</div>
+      </div>
+    )
+  }
   if (showVideo) {
     return (
       <div className="relative h-screen w-full overflow-hidden bg-black">
         {/* Intro Video */}
         <div className="absolute inset-0">
-          {isClient && (
-            <video
-              autoPlay
-              muted={isMuted}
-              className="h-full w-full object-cover"
-              onEnded={() => {
-                setShowVideo(false)
-                setShowAuth(true)
-              }}
-            >
-              <source src="https://franciliafilms.com/PoliticalVendettaNoGunshots.mp4" type="video/mp4" />
-            </video>
-          )}
+          <video
+            autoPlay
+            muted={isMuted}
+            className="h-full w-full object-cover"
+            onEnded={() => {
+              setShowVideo(false)
+              setShowAuth(true)
+            }}
+          >
+            <source src="https://franciliafilms.com/PoliticalVendettaNoGunshots.mp4" type="video/mp4" />
+          </video>
           
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-black/40" />
@@ -113,7 +121,9 @@ export default function Home() {
       <div className="relative h-screen">
         <div 
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url(/hero.jpg)' }}
+          style={{ 
+            backgroundImage: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8ZGVmcz4KPHN0eWxlPgouY2xzLTEgeyBmaWxsOiAjMTExODI3OyB9Ci5jbHMtMiB7IGZpbGw6ICNhMzg3MjU7IG9wYWNpdHk6IDAuMTsgfQo8L3N0eWxlPgo8L2RlZnM+CjxyZWN0IGNsYXNzPSJjbHMtMSIgd2lkdGg9IjE5MjAiIGhlaWdodD0iMTA4MCIvPgo8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0wLDAgTDE5MjAsNTQwIEwxOTIwLDEwODAgTDAsNTQwIFoiLz4KPHN2Zz4K)' 
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black">
           <div className="flex h-full flex-col items-center justify-center text-center text-white">
