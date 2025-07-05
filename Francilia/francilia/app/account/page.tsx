@@ -32,6 +32,7 @@ import LanguageSelector from '@/components/ui/language-selector'
 import { useRouter } from 'next/navigation'
 import { useI18n } from '@/hooks/use-i18n'
 import { authService, type User as UserType } from '@/lib/auth'
+import AIChat from '@/components/ui/ai-chat'
 
 export default function Account() {
   const [user, setUser] = useState<UserType | null>(null)
@@ -473,6 +474,9 @@ export default function Account() {
           </Card>
         </div>
       </div>
+
+      {/* AI Chat Assistant */}
+      <AIChat />
     </div>
   )
 }

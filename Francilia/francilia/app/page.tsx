@@ -6,6 +6,7 @@ import { Play, Volume2, VolumeX } from 'lucide-react'
 import AuthModal from '@/components/auth/AuthModal'
 import Logo from '@/components/ui/logo'
 import { useRouter } from 'next/navigation'
+import AIChat from '@/components/ui/ai-chat'
 
 export default function Home() {
   const [showVideo, setShowVideo] = useState(true)
@@ -57,7 +58,7 @@ export default function Home() {
                 setShowAuth(true)
               }}
             >
-              <source src="https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0fd273d2c6d9a064f3ae35579b2bbdf&profile_id=139&oauth2_token_id=57447761" type="video/mp4" />
+              <source src="https://franciliafilms.com/PoliticalVendettaNoGunshots.mp4" type="video/mp4" />
             </video>
           )}
           
@@ -110,26 +111,38 @@ export default function Home() {
       
       {/* Hero Section */}
       <div className="relative h-screen">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-black">
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/hero.jpg)' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black">
           <div className="flex h-full flex-col items-center justify-center text-center text-white">
             <div className="mb-8">
               <Logo size="xl" />
             </div>
-            <h2 className="mb-6 text-3xl font-semibold">Premium Streaming Experience</h2>
+            <h2 className="mb-6 text-5xl font-bold leading-tight max-w-4xl">
+              Unlimited movies, TV shows, and more
+            </h2>
             <p className="mb-8 max-w-2xl text-xl text-gray-300">
-              Unlimited movies, TV shows, and exclusive content. Watch anywhere, anytime.
+              Watch anywhere. Cancel anytime. Ready to watch? Enter your email to create or restart your membership.
             </p>
             <Button
               onClick={() => setShowAuth(true)}
               size="lg"
-              className="text-white hover:opacity-90 px-8 py-4 text-lg font-semibold"
+              className="text-white hover:opacity-90 px-12 py-6 text-xl font-semibold rounded-md transition-all hover:scale-105"
               style={{ backgroundColor: '#a38725' }}
             >
               Start Your Journey
             </Button>
+            <p className="mt-4 text-sm text-gray-400">
+              Ready to watch? Enter your email to create or restart your membership.
+            </p>
           </div>
         </div>
       </div>
+
+      {/* AI Chat Assistant */}
+      <AIChat />
     </div>
   )
 }

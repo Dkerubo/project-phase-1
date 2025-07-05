@@ -47,19 +47,26 @@ import {
   RefreshCw,
   Database,
   Trash,
-  Import
+  Import,
+  Film,
+  Globe,
+  Smartphone,
+  Monitor,
+  Tv
 } from 'lucide-react'
 import Logo from '@/components/ui/logo'
 import LanguageSelector from '@/components/ui/language-selector'
 import { useRouter } from 'next/navigation'
 import { useI18n } from '@/hooks/use-i18n'
-import { movieAPI, type Movie, type MovieStats } from '@/lib/movie-api'
+import { movieAPI, type Movie, type MovieStats, MOVIE_CATEGORIES } from '@/lib/muvi-api'
 import { authService, type User } from '@/lib/auth'
+import AIChat from '@/components/ui/ai-chat'
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTimeframe, setSelectedTimeframe] = useState('7d')
+  const [selectedCategory, setSelectedCategory] = useState('all')
   const [movies, setMovies] = useState<Movie[]>([])
   const [movieStats, setMovieStats] = useState<MovieStats | null>(null)
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
@@ -112,10 +119,16 @@ export default function Dashboard() {
     setLoading(false)
   }, [router])
 
-  const loadMovies = async (page: number = 1) => {
+  const loadMovies = async (page: number = 1, category: string = 'all') => {
     setOperationLoading(true)
     try {
-      const response = await movieAPI.getMovies(page, 20)
+      let response
+      if (category === 'all') {
+        response = await movieAPI.getMovies(page, 20)
+      } else {
+        response = await movieAPI.getMoviesByGenre(category, page, 20)
+      }
+      
       if (response.success) {
         setMovies(response.data)
         setCurrentPage(page)
@@ -249,7 +262,7 @@ export default function Dashboard() {
   const handleImportMovies = async (count: number) => {
     setOperationLoading(true)
     try {
-      const response = await movieAPI.importMoviesFromTMDB(count)
+      const response = await movieAPI.importMoviesFromMuvi(count)
       if (response.success) {
         loadMovies()
         loadMovieStats()
@@ -289,6 +302,11 @@ export default function Dashboard() {
     }
   }
 
+  const handleCategoryFilter = (category: string) => {
+    setSelectedCategory(category)
+    loadMovies(1, category)
+  }
+
   // Mock dashboard data
   const dashboardStats = {
     totalUsers: 45672,
@@ -298,14 +316,20 @@ export default function Dashboard() {
     premiumUsers: 28456,
     standardUsers: 10489,
     newSignups: 1234,
-    churnRate: 2.3
+    churnRate: 2.3,
+    deviceBreakdown: {
+      mobile: 45,
+      desktop: 30,
+      tablet: 15,
+      tv: 10
+    }
   }
 
   const recentUsers = [
-    { name: "John Smith", email: "john@example.com", plan: "premium", joinDate: "2024-01-15", status: "active" },
-    { name: "Sarah Johnson", email: "sarah@example.com", plan: "standard", joinDate: "2024-01-14", status: "active" },
-    { name: "Mike Wilson", email: "mike@example.com", plan: "premium", joinDate: "2024-01-13", status: "cancelled" },
-    { name: "Emma Davis", email: "emma@example.com", plan: "standard", joinDate: "2024-01-12", status: "active" }
+    { name: "John Smith", email: "john@example.com", plan: "premium", joinDate: "2024-01-15", status: "active", device: "mobile" },
+    { name: "Sarah Johnson", email: "sarah@example.com", plan: "standard", joinDate: "2024-01-14", status: "active", device: "desktop" },
+    { name: "Mike Wilson", email: "mike@example.com", plan: "premium", joinDate: "2024-01-13", status: "cancelled", device: "tv" },
+    { name: "Emma Davis", email: "emma@example.com", plan: "standard", joinDate: "2024-01-12", status: "active", device: "tablet" }
   ]
 
   if (loading) {
@@ -344,8 +368,12 @@ export default function Dashboard() {
                 Users
               </Button>
               <Button variant="ghost" className="text-white hover:text-[#a38725] hover:bg-white/5">
-                <Play className="mr-2 h-4 w-4" />
+                <Film className="mr-2 h-4 w-4" />
                 Content
+              </Button>
+              <Button variant="ghost" className="text-white hover:text-[#a38725] hover:bg-white/5">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
               </Button>
             </nav>
           </div>
@@ -355,7 +383,7 @@ export default function Dashboard() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search movies..."
+                placeholder="Search content..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
@@ -367,17 +395,13 @@ export default function Dashboard() {
             
             <LanguageSelector />
             
-            <Badge className="bg-green-500 text-white">
+            <Badge className="bg-red-500 text-white">
               <Crown className="mr-1 h-3 w-3" />
               Admin
             </Badge>
             
             <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
               <Bell className="h-4 w-4" />
-            </Button>
-            
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-              <Settings className="h-4 w-4" />
             </Button>
             
             <Button
@@ -401,7 +425,7 @@ export default function Dashboard() {
           <p className="text-gray-400 text-lg">
             Complete platform control and analytics dashboard
           </p>
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-4 flex-wrap">
             <Badge className="bg-red-500 text-white">
               <AlertTriangle className="mr-1 h-3 w-3" />
               Admin Access
@@ -415,9 +439,13 @@ export default function Dashboard() {
                 <WifiOff className="h-4 w-4 text-red-500" />
               )}
               <span className="text-sm text-gray-400">
-                API Status: {apiStatus === 'connected' ? 'Connected' : apiStatus === 'testing' ? 'Testing...' : 'Disconnected'}
+                Muvi API: {apiStatus === 'connected' ? 'Connected' : apiStatus === 'testing' ? 'Testing...' : 'Disconnected'}
               </span>
             </div>
+            <Badge className="bg-blue-500 text-white">
+              <Globe className="mr-1 h-3 w-3" />
+              {dashboardStats.totalUsers.toLocaleString()} Users
+            </Badge>
           </div>
         </div>
 
@@ -546,14 +574,14 @@ export default function Dashboard() {
             <DialogTrigger asChild>
               <Button variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
                 <Import className="mr-2 h-4 w-4" />
-                Import from TMDB
+                Import from Muvi
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-gray-900 border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-white">Import Movies from TMDB</DialogTitle>
+                <DialogTitle className="text-white">Import Movies from Muvi</DialogTitle>
                 <DialogDescription className="text-gray-400">
-                  Import popular movies from The Movie Database
+                  Import movies from the Muvi content library
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -605,14 +633,28 @@ export default function Dashboard() {
             )}
             Refresh
           </Button>
+
+          <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
+            <SelectTrigger className="w-48 bg-gray-800/50 border-gray-700/50 text-white">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectItem value="all" className="text-white">All Categories</SelectItem>
+              {MOVIE_CATEGORIES.map((category) => (
+                <SelectItem key={category.id} value={category.name} className="text-white">
+                  {category.icon} {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Total Movies</CardTitle>
-              <Play className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-sm font-medium text-gray-400">Total Content</CardTitle>
+              <Film className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{movieStats?.totalMovies || 0}</div>
@@ -674,7 +716,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">
                     <Database className="h-5 w-5" style={{ color: '#a38725' }} />
-                    Movie Library ({movies.length})
+                    Content Library ({movies.length})
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <Button
@@ -753,7 +795,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => loadMovies(currentPage - 1)}
+                      onClick={() => loadMovies(currentPage - 1, selectedCategory)}
                       disabled={currentPage === 1 || operationLoading}
                       className="border-gray-700 text-white hover:bg-gray-800"
                     >
@@ -765,7 +807,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => loadMovies(currentPage + 1)}
+                      onClick={() => loadMovies(currentPage + 1, selectedCategory)}
                       disabled={currentPage === totalPages || operationLoading}
                       className="border-gray-700 text-white hover:bg-gray-800"
                     >
@@ -807,6 +849,39 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
+            {/* Device Usage */}
+            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Monitor className="h-5 w-5 text-blue-500" />
+                  Device Usage
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-blue-500" />
+                    <span className="text-white">Mobile</span>
+                  </div>
+                  <span className="text-white font-semibold">{dashboardStats.deviceBreakdown.mobile}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4 text-green-500" />
+                    <span className="text-white">Desktop</span>
+                  </div>
+                  <span className="text-white font-semibold">{dashboardStats.deviceBreakdown.desktop}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tv className="h-4 w-4 text-purple-500" />
+                    <span className="text-white">Smart TV</span>
+                  </div>
+                  <span className="text-white font-semibold">{dashboardStats.deviceBreakdown.tv}%</span>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* System Health */}
             <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
               <CardHeader>
@@ -818,7 +893,7 @@ export default function Dashboard() {
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-300">API Connection</span>
+                    <span className="text-gray-300">Muvi API</span>
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${
                         apiStatus === 'connected' ? 'bg-green-500' : 
@@ -841,7 +916,7 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-300">Content Delivery</span>
+                    <span className="text-gray-300">CDN</span>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
                       <span className="text-white font-semibold">Optimal</span>
@@ -860,7 +935,7 @@ export default function Dashboard() {
                     ) : (
                       <TestTube className="mr-2 h-4 w-4" />
                     )}
-                    Test All Systems
+                    Test Systems
                   </Button>
                 </div>
               </CardContent>
@@ -920,7 +995,53 @@ export default function Dashboard() {
             </Card>
           </div>
         )}
+
+        {/* Recent Users */}
+        <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Users className="h-5 w-5" style={{ color: '#a38725' }} />
+              Recent Users
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentUsers.map((user, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                      <User className="h-4 w-4 text-gray-300" />
+                    </div>
+                    <div>
+                      <div className="text-white font-medium">{user.name}</div>
+                      <div className="text-gray-400 text-sm">{user.email}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge className={user.plan === 'premium' ? 'bg-[#a38725] text-white' : 'bg-yellow-600 text-white'}>
+                      {user.plan === 'premium' ? <Crown className="mr-1 h-3 w-3" /> : <Zap className="mr-1 h-3 w-3" />}
+                      {user.plan}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      {user.device === 'mobile' && <Smartphone className="h-4 w-4 text-blue-500" />}
+                      {user.device === 'desktop' && <Monitor className="h-4 w-4 text-green-500" />}
+                      {user.device === 'tv' && <Tv className="h-4 w-4 text-purple-500" />}
+                      {user.device === 'tablet' && <Monitor className="h-4 w-4 text-orange-500" />}
+                    </div>
+                    <Badge className={user.status === 'active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
+                      {user.status === 'active' ? <CheckCircle className="mr-1 h-3 w-3" /> : <XCircle className="mr-1 h-3 w-3" />}
+                      {user.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* AI Chat Assistant */}
+      <AIChat />
 
       {/* Edit Movie Dialog */}
       {editingMovie && (

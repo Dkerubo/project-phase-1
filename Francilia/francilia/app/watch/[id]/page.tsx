@@ -21,6 +21,7 @@ import {
 import { movieAPI, type Movie } from '@/lib/movie-api'
 import { useRouter, useParams } from 'next/navigation'
 import { useI18n } from '@/hooks/use-i18n'
+import AIChat from '@/components/ui/ai-chat'
 
 export default function WatchMovie() {
   const [user, setUser] = useState<any>(null)
@@ -354,6 +355,9 @@ export default function WatchMovie() {
           </div>
         </div>
       )}
+
+      {/* AI Chat Assistant */}
+      <AIChat />
     </div>
   )
 }
