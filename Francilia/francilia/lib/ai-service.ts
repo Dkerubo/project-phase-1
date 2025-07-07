@@ -147,6 +147,28 @@ You have access to a large library of movies across genres like Action, Drama, C
         type: 'text'
       }
     }
+
+    // Video player help
+    if (lowerMessage.includes('player') || lowerMessage.includes('video') || lowerMessage.includes('controls')) {
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        role: 'assistant',
+        content: "Here are some video player tips! 🎬 Use spacebar to play/pause, arrow keys to seek, M to mute, and F for fullscreen. You can also adjust playback speed and quality in the settings menu. Having trouble with a specific feature?",
+        timestamp: new Date(),
+        type: 'text'
+      }
+    }
+
+    // Quality/streaming issues
+    if (lowerMessage.includes('quality') || lowerMessage.includes('streaming') || lowerMessage.includes('slow')) {
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        role: 'assistant',
+        content: "For better streaming quality: 📺 Check your internet speed (we recommend 25+ Mbps for 4K), try lowering video quality in player settings, close other apps using bandwidth, or restart your router. Premium users get priority streaming!",
+        timestamp: new Date(),
+        type: 'text'
+      }
+    }
     
     // Default response
     return {
@@ -258,6 +280,16 @@ You have access to a large library of movies across genres like Action, Drama, C
     const genreCount: { [genre: string]: number } = {}
     const totalMovies = viewingHistory.length
     
+    if (totalMovies === 0) {
+      // Default preferences for new users
+      return {
+        'action': 0.3,
+        'drama': 0.3,
+        'comedy': 0.2,
+        'thriller': 0.2
+      }
+    }
+    
     viewingHistory.forEach(movie => {
       movie.genre.forEach(genre => {
         const lowerGenre = genre.toLowerCase()
@@ -290,7 +322,8 @@ You have access to a large library of movies across genres like Action, Drama, C
   analyzeUserBehavior(viewingHistory: Movie[], watchTime: number[]): any {
     const analysis = {
       favoriteGenres: this.analyzeGenrePreferences(viewingHistory),
-      averageRating: viewingHistory.reduce((sum, movie) => sum + movie.rating, 0) / viewingHistory.length,
+      averageRating: viewingHistory.length > 0 ? 
+        viewingHistory.reduce((sum, movie) => sum + movie.rating, 0) / viewingHistory.length : 0,
       preferredDecade: this.getPreferredDecade(viewingHistory),
       watchingPatterns: this.analyzeWatchingPatterns(watchTime),
       recommendations: []
@@ -300,6 +333,8 @@ You have access to a large library of movies across genres like Action, Drama, C
   }
 
   private getPreferredDecade(movies: Movie[]): string {
+    if (movies.length === 0) return '2020s'
+    
     const decades: { [decade: string]: number } = {}
     
     movies.forEach(movie => {

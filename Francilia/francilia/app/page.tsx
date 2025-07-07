@@ -14,6 +14,7 @@ export default function Home() {
   const [isMuted, setIsMuted] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -21,28 +22,56 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in but still show intro video
     if (typeof window !== 'undefined') {
-      const user = localStorage.getItem('francilia_user')
-      if (user) {
-        setIsLoggedIn(true)
-        router.push('/browse')
+      const userData = localStorage.getItem('francilia_user')
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData)
+          setUser(parsedUser)
+          setIsLoggedIn(true)
+        } catch (error) {
+          console.error('Error parsing user data:', error)
+        }
       }
     }
-  }, [router])
+  }, [])
 
   useEffect(() => {
+    // Auto-advance after 8 seconds
     const timer = setTimeout(() => {
-      setShowVideo(false)
-      setShowAuth(true)
-    }, 8000) // Show intro for 8 seconds
+      handleVideoEnd()
+    }, 8000)
 
     return () => clearTimeout(timer)
   }, [])
 
+  const handleVideoEnd = () => {
+    setShowVideo(false)
+    
+    // If user is logged in and has subscription, go to browse
+    if (isLoggedIn && user?.subscription) {
+      router.push('/browse')
+    } else if (isLoggedIn && !user?.subscription) {
+      // If logged in but no subscription, go to subscribe
+      router.push('/subscribe')
+    } else {
+      // If not logged in, show auth modal
+      setShowAuth(true)
+    }
+  }
+
   const handleGetStarted = () => {
     setShowVideo(false)
-    setShowAuth(true)
+    
+    // Same logic as video end
+    if (isLoggedIn && user?.subscription) {
+      router.push('/browse')
+    } else if (isLoggedIn && !user?.subscription) {
+      router.push('/subscribe')
+    } else {
+      setShowAuth(true)
+    }
   }
 
   // Show loading state until client-side hydration is complete
@@ -53,6 +82,8 @@ export default function Home() {
       </div>
     )
   }
+
+  // Always show video first, regardless of login status
   if (showVideo) {
     return (
       <div className="relative h-screen w-full overflow-hidden bg-black">
@@ -62,12 +93,9 @@ export default function Home() {
             autoPlay
             muted={isMuted}
             className="h-full w-full object-cover"
-            onEnded={() => {
-              setShowVideo(false)
-              setShowAuth(true)
-            }}
+            onEnded={handleVideoEnd}
           >
-            <source src="https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0fd273d2c6d9a064f3ae35579b2bbdf&profile_id=139&oauth2_token_id=57447761" type="video/mp4" />
+            <source src="https://franciliafilms.com/PoliticalVendettaNoGunshots.mp4" type="video/mp4" />
           </video>
           
           {/* Dark overlay */}
@@ -81,30 +109,47 @@ export default function Home() {
               
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className="rounded-full bg-white/20 p-3 text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+                className="rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors"
               >
                 {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
               </button>
             </div>
-            
+
             {/* Bottom section with CTA */}
             <div className="mt-auto p-8 pb-16">
               <div className="max-w-2xl">
                 <h1 className="mb-4 text-6xl font-bold text-white">
-                  Welcome to the Future of Entertainment
+                  {isLoggedIn ? `Welcome back, ${user?.name || 'User'}!` : 'Welcome to the Future of Entertainment'}
                 </h1>
                 <p className="mb-8 text-xl text-gray-300">
-                  Experience premium streaming with exclusive content, ad-free viewing, and unlimited access to thousands of movies and shows.
+                  {isLoggedIn 
+                    ? 'Ready to continue your streaming journey? Discover new content and pick up where you left off.'
+                    : 'Experience premium streaming with exclusive content, ad-free viewing, and unlimited access to thousands of movies and shows.'
+                  }
                 </p>
                 <Button
                   onClick={handleGetStarted}
                   size="lg"
-                  className="text-white hover:opacity-90 px-8 py-4 text-lg font-semibold"
+                  className="text-white hover:opacity-90 px-8 py-4 text-lg font-semibold transition-all hover:scale-105"
                   style={{ backgroundColor: '#a38725' }}
                 >
-                  <Play className="mr-2" size={20} />
-                  Get Started
+                  <Play className="mr-2 h-5 w-5" />
+                  {isLoggedIn 
+                    ? (user?.subscription ? 'Continue Watching' : 'Choose Your Plan')
+                    : 'Get Started'
+                  }
                 </Button>
+                
+                {/* Skip button for returning users */}
+                {isLoggedIn && (
+                  <Button
+                    onClick={handleGetStarted}
+                    variant="ghost"
+                    className="ml-4 text-white hover:bg-white/10"
+                  >
+                    Skip Intro
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -113,6 +158,7 @@ export default function Home() {
     )
   }
 
+  // Fallback content (only shown if not logged in and video ended)
   return (
     <div className="min-h-screen bg-black">
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />

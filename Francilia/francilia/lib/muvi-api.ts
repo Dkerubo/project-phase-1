@@ -1,5 +1,6 @@
-const MUVI_API_KEY = '17502009686851f288856ff120251848'
-const MUVI_BASE_URL = 'https://api.muvi.com/v1'
+const MUVI_API_KEY = '1751901862686be6a6b6349462253146'
+const MUVI_APP_ID = 'cf593f0324e946dab98ac9e0c6839ef0'
+const MUVI_BASE_URL = 'https://api.muvi.com/v2'
 
 export interface Movie {
   id: string
@@ -136,8 +137,9 @@ class MuviAPI {
         ...options,
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
           'X-API-Key': this.apiKey,
+          'X-App-ID': MUVI_APP_ID,
+          'Content-Type': 'application/json',
           'Accept': 'application/json',
           ...options.headers,
         },

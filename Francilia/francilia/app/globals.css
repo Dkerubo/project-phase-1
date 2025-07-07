@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 10, 10;
-  --background-end-rgb: 0, 0, 0;
-}
-
 @layer base {
   :root {
     --background: 0 0% 4%;
@@ -48,20 +42,20 @@
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 8px;
 }
 
-::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: #1a1a1a;
 }
 
-::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: #404040;
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
   background: #555555;
 }
 
@@ -71,7 +65,7 @@
 }
 
 /* Video player range slider */
-input[type="range"] {
+input[type="range"]:not(.default) {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
@@ -79,7 +73,7 @@ input[type="range"] {
   outline: none;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"]:not(.default)::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 16px;
@@ -91,7 +85,7 @@ input[type="range"]::-webkit-slider-thumb {
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-input[type="range"]::-moz-range-thumb {
+input[type="range"]:not(.default)::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -102,18 +96,18 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Glassmorphism effect */
-.glass {
+.glass-effect {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Hover animations */
-.hover-scale {
+.hover-scale-effect {
   transition: transform 0.3s ease;
 }
 
-.hover-scale:hover {
+.hover-scale-effect:hover {
   transform: scale(1.05);
 }
 
@@ -132,7 +126,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Custom focus styles */
-.focus-visible {
+.focus-visible-custom {
   outline: 2px solid #a38725;
   outline-offset: 2px;
 }
