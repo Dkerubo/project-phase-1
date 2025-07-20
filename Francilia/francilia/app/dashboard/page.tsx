@@ -1,6 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useI18n } from '@/hooks/use-i18n'
+import { 
+  Users, Play, DollarSign, TrendingUp, Search, MoreHorizontal, Eye, Star, Crown, Zap,
+  ArrowUpRight, ArrowDownRight, Filter, Download, Settings, Bell, LogOut, BarChart3,
+  PieChart, Activity, Plus, Edit, Trash2, Save, TestTube, Wifi, WifiOff, Shield,
+  AlertTriangle, Upload, FileText, Calendar, CheckCircle, XCircle, RefreshCw,
+  Database, Trash, Import, Film, Globe, Smartphone, Monitor, Tv
+} from 'lucide-react'
+
+// Components
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,60 +20,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { 
-  Users, 
-  Play, 
-  DollarSign, 
-  TrendingUp, 
-  Search,
-  MoreHorizontal,
-  Eye,
-  Star,
-  Crown,
-  Zap,
-  ArrowUpRight,
-  ArrowDownRight,
-  Filter,
-  Download,
-  Settings,
-  Bell,
-  LogOut,
-  BarChart3,
-  PieChart,
-  Activity,
-  Plus,
-  Edit,
-  Trash2,
-  Save,
-  TestTube,
-  Wifi,
-  WifiOff,
-  Shield,
-  AlertTriangle,
-  Upload,
-  FileText,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  Database,
-  Trash,
-  Import,
-  Film,
-  Globe,
-  Smartphone,
-  Monitor,
-  Tv
-} from 'lucide-react'
 import Logo from '@/components/ui/logo'
 import LanguageSelector from '@/components/ui/language-selector'
-import { useRouter } from 'next/navigation'
-import { useI18n } from '@/hooks/use-i18n'
-import { movieAPI, type Movie, type MovieStats, MOVIE_CATEGORIES } from '@/lib/muvi-api'
-import { authService, type User } from '@/lib/auth'
 import AIChat from '@/components/ui/ai-chat'
 
+// Services and Types
+import { movieAPI, type Movie, type MovieStats, MOVIE_CATEGORIES } from '@/lib/movie-api'
+import { authService, type User } from '@/lib/auth'
+
 export default function Dashboard() {
+  // State
   const [user, setUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTimeframe, setSelectedTimeframe] = useState('7d')
@@ -81,6 +48,7 @@ export default function Dashboard() {
   const [operationLoading, setOperationLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  
   const [newMovie, setNewMovie] = useState<Partial<Movie>>({
     title: '',
     description: '',
@@ -96,9 +64,12 @@ export default function Dashboard() {
     language: 'English',
     country: 'USA'
   })
+
+  // Hooks
   const router = useRouter()
   const { t } = useI18n()
 
+  // Effects
   useEffect(() => {
     const currentUser = authService.getCurrentUser()
     if (!currentUser) {
@@ -106,7 +77,6 @@ export default function Dashboard() {
       return
     }
     
-    // Only allow admin access
     if (currentUser.role !== 'admin') {
       router.push('/account')
       return
@@ -119,15 +89,13 @@ export default function Dashboard() {
     setLoading(false)
   }, [router])
 
+  // Data Loading
   const loadMovies = async (page: number = 1, category: string = 'all') => {
     setOperationLoading(true)
     try {
-      let response
-      if (category === 'all') {
-        response = await movieAPI.getMovies(page, 20)
-      } else {
-        response = await movieAPI.getMoviesByGenre(category, page, 20)
-      }
+      const response = category === 'all' 
+        ? await movieAPI.getMovies(page, 20)
+        : await movieAPI.getMoviesByGenre(category, page, 20)
       
       if (response.success) {
         setMovies(response.data)
@@ -162,6 +130,7 @@ export default function Dashboard() {
     }
   }
 
+  // Handlers
   const handleLogout = () => {
     authService.logout()
     router.push('/')
@@ -175,21 +144,7 @@ export default function Dashboard() {
       const response = await movieAPI.createMovie(newMovie)
       if (response.success) {
         setMovies([response.data, ...movies])
-        setNewMovie({
-          title: '',
-          description: '',
-          year: new Date().getFullYear(),
-          genre: [],
-          rating: 0,
-          duration: '',
-          thumbnail: '',
-          backdrop: '',
-          videoUrl: '',
-          cast: [],
-          director: '',
-          language: 'English',
-          country: 'USA'
-        })
+        resetNewMovieForm()
         setShowAddMovie(false)
         loadMovieStats()
       }
@@ -307,7 +262,26 @@ export default function Dashboard() {
     loadMovies(1, category)
   }
 
-  // Mock dashboard data
+  // Helpers
+  const resetNewMovieForm = () => {
+    setNewMovie({
+      title: '',
+      description: '',
+      year: new Date().getFullYear(),
+      genre: [],
+      rating: 0,
+      duration: '',
+      thumbnail: '',
+      backdrop: '',
+      videoUrl: '',
+      cast: [],
+      director: '',
+      language: 'English',
+      country: 'USA'
+    })
+  }
+
+  // Mock data
   const dashboardStats = {
     totalUsers: 45672,
     activeSubscriptions: 38945,
@@ -332,23 +306,32 @@ export default function Dashboard() {
     { name: "Emma Davis", email: "emma@example.com", plan: "standard", joinDate: "2024-01-12", status: "active", device: "tablet" }
   ]
 
+  // Loading and Access Control States
   if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-white">{t('common.loading')}</div>
-    </div>
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">{t('common.loading')}</div>
+      </div>
+    )
   }
 
   if (!user || user.role !== 'admin') {
-    return <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-center text-white">
-        <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-        <p className="text-gray-400 mb-4">You don't have permission to access this page.</p>
-        <Button onClick={() => router.push('/browse')} className="text-white" style={{ backgroundColor: '#a38725' }}>
-          Go to Browse
-        </Button>
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center text-white">
+          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+          <p className="text-gray-400 mb-4">You don't have permission to access this page.</p>
+          <Button 
+            onClick={() => router.push('/browse')} 
+            className="text-white" 
+            style={{ backgroundColor: '#a38725' }}
+          >
+            Go to Browse
+          </Button>
+        </div>
       </div>
-    </div>
+    )
   }
 
   return (
@@ -416,6 +399,7 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {/* Main Content */}
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Welcome Section */}
         <div className="mb-8">

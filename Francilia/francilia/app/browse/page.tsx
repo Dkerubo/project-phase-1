@@ -1,22 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, Play, Info, LogOut, User, Settings, Star, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { useI18n } from '@/hooks/use-i18n'
+
+// Components
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Search, Play, Info, LogOut, User, Settings, Star, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Logo from '@/components/ui/logo'
 import LanguageSelector from '@/components/ui/language-selector'
-import { movieAPI, type Movie, MOVIE_CATEGORIES } from '@/lib/muvi-api'
-import { useRouter } from 'next/navigation'
-import { useI18n } from '@/hooks/use-i18n'
-import { authService, type User as UserType } from '@/lib/auth'
 import AIChat from '@/components/ui/ai-chat'
 import AIRecommendations from '@/components/ui/ai-recommendations'
 
+// Services and Types
+import { movieAPI, type Movie, MOVIE_CATEGORIES } from '@/lib/movie-api'
+import { authService, type User as UserType } from '@/lib/auth'
+
 export default function Browse() {
+  // State
   const [user, setUser] = useState<UserType | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedGenre, setSelectedGenre] = useState<string>('all')
@@ -30,9 +35,12 @@ export default function Browse() {
   const [currentFeaturedIndex, setCurrentFeaturedIndex] = useState(0)
   const [apiStatus, setApiStatus] = useState<string>('')
   const [showAIRecommendations, setShowAIRecommendations] = useState(false)
+
+  // Hooks
   const router = useRouter()
   const { t } = useI18n()
 
+  // Effects
   useEffect(() => {
     const currentUser = authService.getCurrentUser()
     if (!currentUser) {
@@ -50,11 +58,10 @@ export default function Browse() {
   }, [router])
 
   useEffect(() => {
-    // Auto-rotate featured movies
     if (featuredMovies.length > 1) {
       const interval = setInterval(() => {
         setCurrentFeaturedIndex((prev) => (prev + 1) % featuredMovies.length)
-      }, 8000) // Change every 8 seconds
+      }, 8000)
       
       return () => clearInterval(interval)
     }
@@ -66,13 +73,12 @@ export default function Browse() {
     }
   }, [currentFeaturedIndex, featuredMovies])
 
+  // Handlers
   const loadContent = async () => {
     setLoading(true)
     setApiStatus('Loading content...')
     
     try {
-      console.log('Starting to load content from Muvi API...')
-      
       // Load featured movies
       const featuredResponse = await movieAPI.getFeaturedMovies()
       if (featuredResponse.success && featuredResponse.data.length > 0) {
@@ -89,7 +95,7 @@ export default function Browse() {
       // Load movies by category
       const categoryMovies: { [key: string]: Movie[] } = {}
       
-      for (const category of MOVIE_CATEGORIES.slice(0, 8)) { // Load first 8 categories
+      for (const category of MOVIE_CATEGORIES.slice(0, 8)) {
         try {
           const categoryResponse = await movieAPI.getMoviesByGenre(category.name, 1, 10)
           if (categoryResponse.success && categoryResponse.data.length > 0) {
@@ -202,6 +208,7 @@ export default function Browse() {
     setCurrentFeaturedIndex((prev) => (prev - 1 + featuredMovies.length) % featuredMovies.length)
   }
 
+  // Derived state
   const filteredMovies = searchQuery 
     ? movies.filter(movie =>
         movie.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -210,9 +217,11 @@ export default function Browse() {
     : movies
 
   if (!user) {
-    return <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-white">{t('common.loading')}</div>
-    </div>
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">{t('common.loading')}</div>
+      </div>
+    )
   }
 
   return (
@@ -407,7 +416,7 @@ export default function Browse() {
         {user && (
           <AIRecommendations
             userId={user.email}
-            viewingHistory={[]} // You can track this in localStorage or database
+            viewingHistory={[]}
             preferences={user.preferences}
             onMovieSelect={handleMovieSelect}
           />

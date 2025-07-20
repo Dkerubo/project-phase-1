@@ -31,6 +31,7 @@ export interface Movie {
   adult?: boolean
   createdAt?: string
   updatedAt?: string
+  
 }
 
 export interface ApiResponse<T> {

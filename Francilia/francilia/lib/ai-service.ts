@@ -1,4 +1,4 @@
-import { movieAPI, type Movie } from './muvi-api'
+import { movieAPI, type Movie } from './movie-api'
 
 export interface ChatMessage {
   id: string
